@@ -72,4 +72,5 @@ class MySqlDb:
         with self.conn.cursor() as cursor:
             cursor.execute(sql)
             count_result = cursor.fetchone()[0]
+            print(count_result)
             return count_result

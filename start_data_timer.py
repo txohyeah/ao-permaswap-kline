@@ -36,6 +36,7 @@ def flatten(edges, exchange_pid, token_x_pid):
 def exchange_data_collection(logger: ExchangeLogger, exchange_pid: str, token_x_pid: str, start_time: datetime, end_time: datetime):
     has_next_page = True
     edges = []
+    logger.info(str(start_time) + " " + str(end_time))
     start_timestamp = int(time.mktime(start_time.timetuple())) * 1000
     end_timestamp = int(time.mktime(end_time.timetuple())) * 1000
     while has_next_page:
@@ -49,9 +50,9 @@ def exchange_data_collection(logger: ExchangeLogger, exchange_pid: str, token_x_
             has_next_page = su_msg.page_info.has_next_page
             # has_next_page = False
             start_timestamp = su_msg.get_latest_cursor()
-            print(f"has_next_page: {has_next_page}")
+            logger.info(f"has_next_page: {has_next_page}")
         except Exception as e:
-            print(f"grant_analysis error: {e}")
+            logger.info(f"grant_analysis error: {e}")
         
         time.sleep(5)
 
@@ -61,7 +62,7 @@ def fetch_data_once(logger: ExchangeLogger, exchange_code: str, exchange_pid: st
     try:
         data_to_insert = exchange_data_collection(logger, exchange_pid, token_x_pid, start_time, end_time)
         _db.insert('''
-            INSERT INTO ''' + exchange_code + ''' (
+            REPLACE INTO ''' + exchange_code + ''' (
                 id,
                 player_id,
                 x_amount,
@@ -76,13 +77,14 @@ def fetch_data_once(logger: ExchangeLogger, exchange_code: str, exchange_pid: st
         logger.error("Unexpected error in fetch_data_once")
 
 def fetch_data(logger: ExchangeLogger, exchange_code: str, exchange_pid: str, token_x_pid: str):
+    logger.info(f'exchange_code:{exchange_code}')
     count = _db.count(f"SELECT COUNT(1) FROM {exchange_code}")
     if count == 0:
         sync_history(logger, exchange_code, exchange_pid, token_x_pid)
 
     while True:
         now = datetime.now()
-        start_time = now - timedelta(minutes=10)
+        start_time = now - timedelta(minutes=24 * 60)
         end_time = now
         fetch_data_once(logger, exchange_code, exchange_pid, token_x_pid, start_time, end_time)
 

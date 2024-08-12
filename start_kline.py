@@ -67,13 +67,10 @@ daily_data = daily_data[['Date', 'Open', 'Close', ('y_ratio_amount', 'min'), ('y
 # 将多级索引扁平化
 daily_data.columns = ['Date', 'Open', 'Close', 'Low', 'High', 'Volumn']
 
-title_str = f'''Daily {ratio} {exchange_config_item.get('token_x')} to {'token_y'} Price'''
-
-# Streamlit 应用
-st.title(title_str)
+title_str = f'''Daily {ratio} {exchange_config_item.get('token_x')} to {exchange_config_item.get('token_y')} Price'''
 
 # 创建 K 线图
-fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.03,
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.15,
                     row_width=[0.2, 0.7], specs=[[{"type": "candlestick"}], [{"type": "bar"}]])
 
 # 添加 K 线图
@@ -87,7 +84,7 @@ fig.add_trace(go.Candlestick(x=daily_data['Date'],
 fig.add_trace(go.Bar(x=daily_data['Date'], y=daily_data['Volumn'], name="Volume"), row=2, col=1)
 
 # 更新图表布局
-fig.update_layout(height=900, width=1200, title_text=title_str)
+fig.update_layout(height=600, title_text=title_str)
 
 # 显示图表
 st.plotly_chart(fig)
