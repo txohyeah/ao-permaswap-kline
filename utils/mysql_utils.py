@@ -37,8 +37,9 @@ def generate_unique_id(record):
 
 class MySqlDb:
 
-    def __init__(self):
+    def __init__(self, logger):
         self.conn = pymysql.connect(**db_config)
+        self.logger = logger
 
     def insert(self, sql: str, data_to_insert: dict):
         try:
@@ -48,12 +49,12 @@ class MySqlDb:
             
             # 提交事务
             self.conn.commit()
-            print(f'{cursor.rowcount} 条记录插入成功。')
+            self.logger.info(f'{cursor.rowcount} 条记录插入成功。')
         except pymysql.MySQLError as e:
-            print(f'发生错误：{e}')
+            self.logger.error(f'发生错误：{e}')
 
     def select(self, sql: str):
-        print(sql)
+        self.logger.info(sql)
         with self.conn.cursor() as cursor:
             cursor.execute(sql)
             columns = [col[0] for col in cursor.description]
@@ -63,14 +64,14 @@ class MySqlDb:
             return result
         
     def select_as_pd(self, sql: str):
-        print(sql)
+        self.logger.info(sql)
         data = pd.read_sql_query(sql, self.conn)
         return data
         
     def count(self, sql: str):
-        print(sql)
+        self.logger.info(sql)
         with self.conn.cursor() as cursor:
             cursor.execute(sql)
             count_result = cursor.fetchone()[0]
-            print(count_result)
+            self.logger.info(count_result)
             return count_result

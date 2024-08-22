@@ -6,9 +6,9 @@ from logger.exchange_logger import ExchangeLogger
 import math
 
 
-_db = mysql_utils.MySqlDb()
-_exchange_config = {}
 logger = ExchangeLogger("kline")
+_db = mysql_utils.MySqlDb(logger)
+_exchange_config = {}
 
 
 def init():

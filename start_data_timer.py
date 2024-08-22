@@ -7,8 +7,6 @@ from datetime import datetime, timedelta
 import time
 import threading
 
-
-_db = MySqlDb()
 _exchange_config = {}
 
 def flatten(edges, exchange_pid, token_x_pid):
@@ -58,10 +56,10 @@ def exchange_data_collection(logger: ExchangeLogger, exchange_pid: str, token_x_
 
     return flatten(edges, exchange_pid, token_x_pid)
 
-def fetch_data_once(logger: ExchangeLogger, exchange_code: str, exchange_pid: str, token_x_pid: str, start_time, end_time):
+def fetch_data_once(logger: ExchangeLogger, db: MySqlDb, exchange_code: str, exchange_pid: str, token_x_pid: str, start_time, end_time):
     try:
         data_to_insert = exchange_data_collection(logger, exchange_pid, token_x_pid, start_time, end_time)
-        _db.insert('''
+        db.insert('''
             REPLACE INTO ''' + exchange_code + ''' (
                 id,
                 player_id,
@@ -76,29 +74,30 @@ def fetch_data_once(logger: ExchangeLogger, exchange_code: str, exchange_pid: st
         logger.error(e)
         logger.error("Unexpected error in fetch_data_once")
 
-def fetch_data(logger: ExchangeLogger, exchange_code: str, exchange_pid: str, token_x_pid: str):
+def fetch_data(logger: ExchangeLogger, db: MySqlDb, exchange_code: str, exchange_pid: str, token_x_pid: str):
     logger.info(f'exchange_code:{exchange_code}')
-    count = _db.count(f"SELECT COUNT(1) FROM {exchange_code}")
+    count = db.count(f"SELECT COUNT(1) FROM {exchange_code}")
     if count == 0:
-        sync_history(logger, exchange_code, exchange_pid, token_x_pid)
+        sync_history(logger, db, exchange_code, exchange_pid, token_x_pid)
 
     while True:
         now = datetime.now()
         start_time = now - timedelta(minutes=24 * 60)
         end_time = now
-        fetch_data_once(logger, exchange_code, exchange_pid, token_x_pid, start_time, end_time)
+        fetch_data_once(logger, db, exchange_code, exchange_pid, token_x_pid, start_time, end_time)
 
-def sync_history(logger: ExchangeLogger, exchange_code: str, exchange_pid: str, token_x_pid: str):
+def sync_history(logger: ExchangeLogger, db: MySqlDb, exchange_code: str, exchange_pid: str, token_x_pid: str):
     logger.info(">>>>>>>>>>>>> start sync history exchange >>>>>>>>>>>>>>>>>")
     now = datetime.now()
     start_time = now - timedelta(days=400)
     end_time = now
-    fetch_data_once(logger, exchange_code, exchange_pid, token_x_pid, start_time, end_time)
+    fetch_data_once(logger, db, exchange_code, exchange_pid, token_x_pid, start_time, end_time)
     logger.info(">>>>>>>>>>>>> finish sync history exchange >>>>>>>>>>>>>>>>>")
 
 def init():
     logger = ExchangeLogger("init_exchange_data")
-    results = _db.select("SELECT * FROM exchange_price_config WHERE del_flag = 0;")
+    db = MySqlDb(logger)
+    results = db.select("SELECT * FROM exchange_price_config WHERE del_flag = 0;")
     for result in results:
         _exchange_config[result['code']] = result
     logger.info(">>>>>>>>>>>>> finish init exchange config >>>>>>>>>>>>>>>>>")
@@ -108,6 +107,7 @@ def init():
 def start_timer():
     for exchange_code, exchange_config in _exchange_config.items():
         logger = ExchangeLogger(exchange_code)
+        db = MySqlDb(logger)
         logger.info(">>>>>>>>>>>>> start exchange data timer >>>>>>>>>>>>>>>>>")
         logger.info(exchange_config)
         logger.info(">>>>>>>>>>>>> start exchange data timer >>>>>>>>>>>>>>>>>")
@@ -116,7 +116,7 @@ def start_timer():
         token_x_pid = exchange_config.get('token_x_pid')
         
         thread_fetch_data = threading.Thread(
-            target=fetch_data, args=(logger, exchange_code, exchange_pid, token_x_pid))
+            target=fetch_data, args=(logger, db, exchange_code, exchange_pid, token_x_pid))
         thread_fetch_data.start()
 
 
