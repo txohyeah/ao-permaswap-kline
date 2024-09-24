@@ -97,7 +97,7 @@ def sync_history(logger: ExchangeLogger, db: MySqlDb, exchange_code: str, exchan
 def init():
     logger = ExchangeLogger("init_exchange_data")
     db = MySqlDb(logger)
-    results = db.select("SELECT * FROM exchange_price_config WHERE del_flag = 0;")
+    results = db.select("SELECT * FROM exchange_price_config WHERE data_from = 'AO' and del_flag = 0;")
     for result in results:
         _exchange_config[result['code']] = result
     logger.info(">>>>>>>>>>>>> finish init exchange config >>>>>>>>>>>>>>>>>")
