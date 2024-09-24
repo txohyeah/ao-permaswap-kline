@@ -50,7 +50,7 @@ def exchange_data_collection(logger: ExchangeLogger, exchange_pid: str, token_x_
             start_timestamp = su_msg.get_latest_cursor()
             logger.info(f"has_next_page: {has_next_page}")
         except Exception as e:
-            logger.info(f"grant_analysis error: {e}")
+            logger.info(f"exchange_data_collection: {e}")
         
         time.sleep(5)
 

@@ -4,13 +4,11 @@ import requests
 import pandas as pd
 
 from logger.exchange_logger import ExchangeLogger
-from mysql_utils import MySqlDb
 
 stats_host = 'https://stats.permaswap.network'
 router_host = 'https://router.permaswap.network'
 
 logger = ExchangeLogger("ps_everpay_utils")
-db = MySqlDb(logger)
 
 symbol_to_tag = {
     'ar': 'arweave,ethereum-ar-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,0x4fadc7a98f2dc96510e42dd1a74141eeae0c1543',
@@ -25,16 +23,6 @@ symbol_to_tag = {
 }
 
 tag_to_symbol = {value: key for key, value in symbol_to_tag.items()}
-
-def init():
-    sql = f'''
-        SELECT config_text FROM common_config
-        WHERE code = 'symbol_to_tag' AND del_flag = 0;
-    '''
-    result = db.select(sql)
-    print(result)
-
-init()
 
 def _get_one_page_orders(url:str):
     data = requests.get(url).json()
